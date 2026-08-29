@@ -43,6 +43,24 @@ def build_narration_script(trip: Trip) -> str:
     return " ".join(lines)
 
 
+def build_video_prompt(trip: Trip) -> str:
+    """Prompt pentru generarea video AI end-to-end (model+audio impreuna,
+    ex: bytedance-seedance-v2.5 prin ElevenLabs Flows) -- combina descrierea
+    vizuala de scena UGC cu textul exact pe care personajul trebuie sa-l
+    spuna, ca sa iasa un video de tip "persoana vorbeste in camera despre
+    excursie", nu doar un peisaj generic.
+    """
+    narration = build_narration_script(trip)
+    return (
+        "Videoclip UGC, stil selfie filmat cu telefonul, vertical 9:16. "
+        "O persoana calda si prietenoasa, gen ghid de excursii, vorbeste direct in camera, "
+        f"intr-un cadru autentic legat de {trip.destination}, lumina naturala, energie entuziasta dar naturala, "
+        "nu actorie exagerata. Personajul vorbeste in limba romana, clar si cu entuziasm autentic, exact aceste replici: "
+        f"\"{narration}\" "
+        "Camera usor instabila, stil UGC autentic de social media, nu productie de studio."
+    )
+
+
 def build_caption(trip: Trip) -> str:
     """Text scurt pentru descrierea postarii (Reels/TikTok/Meta ad), separat
     de banner si de voiceover -- util la publicare si la crearea reclamei."""

@@ -16,10 +16,11 @@ import argparse
 import sys
 from pathlib import Path
 
-from .script_builder import build_caption, build_narration_script
+from .script_builder import build_caption, build_narration_script, build_video_prompt
 from .trip import load_trip
 from .video.banner import save_banner
-from .video.compose import compose_video
+from .video.compose import compose_video, overlay_banner_on_video
+from .video.elevenlabs_flows import DEFAULT_VIDEO_MODEL, VideoGenerationError, generate_video
 from .voice.elevenlabs_client import ElevenLabsError, text_to_speech
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -31,6 +32,13 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--no-voice", action="store_true", help="Sari peste generarea voiceover-ului ElevenLabs")
     parser.add_argument("--banner-only", action="store_true", help="Genereaza doar banner-ul PNG, fara video")
     parser.add_argument("--print-script", action="store_true", help="Afiseaza doar scriptul de naratiune si iese")
+    parser.add_argument(
+        "--ai-video", action="store_true",
+        help="Genereaza tot video-ul (scena+voce) printr-un model AI ElevenLabs Flows "
+             "(implicit veo-3.1-generate-001, max 8s), in loc sa asamblezi footage propriu + TTS separat.",
+    )
+    parser.add_argument("--ai-video-model", default=DEFAULT_VIDEO_MODEL, help="model_id pentru --ai-video")
+    parser.add_argument("--ai-video-duration", type=int, default=8, help="Durata in secunde pentru --ai-video")
     args = parser.parse_args(argv)
 
     trip = load_trip(args.trip)
@@ -39,6 +47,8 @@ def main(argv: list[str] | None = None) -> int:
     if args.print_script:
         print("--- Script naratiune (pentru ElevenLabs) ---")
         print(script)
+        print("\n--- Prompt video AI (pentru --ai-video) ---")
+        print(build_video_prompt(trip))
         print("\n--- Caption sugerat pentru postare ---")
         print(build_caption(trip))
         return 0
@@ -46,6 +56,31 @@ def main(argv: list[str] | None = None) -> int:
     if args.banner_only:
         out = save_banner(trip, REPO_ROOT / "assets" / "output" / f"{trip.id}-banner.png")
         print(f"Banner salvat la: {out}")
+        return 0
+
+    if args.ai_video:
+        prompt = build_video_prompt(trip)
+
+        def log(msg: str) -> None:
+            print(f"[ai-video] {msg}")
+
+        raw_path = REPO_ROOT / "assets" / "output" / f"{trip.id}-ai-raw.mp4"
+        try:
+            generate_video(
+                prompt=prompt,
+                output_path=raw_path,
+                model_id=args.ai_video_model,
+                duration_secs=args.ai_video_duration,
+                on_status=log,
+            )
+        except VideoGenerationError as exc:
+            print(f"[EROARE] Generarea video AI a esuat: {exc}", file=sys.stderr)
+            return 1
+
+        output_path = overlay_banner_on_video(trip, raw_path, keep_base_audio=True)
+        print(f"Videoclip UGC final (AI): {output_path}")
+        print("\nCaption sugerat pentru postare:")
+        print(build_caption(trip))
         return 0
 
     voiceover_path = None

@@ -77,6 +77,29 @@ Creezi un fișier nou în `config/trips/`, după modelul
 
 ## 3. Rulezi pipeline-ul video
 
+Există două moduri de generare a videoclipului:
+
+**A. Video generat integral de AI** (recomandat — nu ai nevoie de footage
+propriu, ElevenLabs Flows generează scena + persoana + vocea într-un
+singur pas, pornind dintr-un prompt construit automat din fișierul excursiei):
+
+```bash
+PYTHONPATH=src python3 -m travel_ugc.pipeline --trip config/trips/2026-07-25-excursie-manastiri.yaml --ai-video
+```
+
+Modelul implicit e `veo-3.1-generate-001` (max **8 secunde** per generare,
+9:16, audio inclus — verificat direct din specificația API ElevenLabs).
+Modelul `bytedance-seedance-v2.5` ar permite până la 30 de secunde, dar e
+**dezactivat implicit pe cont** — dacă vrei clipuri mai lungi, contactează
+suportul ElevenLabs să-l activeze, apoi rulează cu
+`--ai-video-model bytedance-seedance-v2.5 --ai-video-duration 30`.
+`gemini-omni-flash` ("Omni Flash", văzut în materialele de marketing
+ElevenLabs) **nu e disponibil ca `model_id` prin API public** momentan —
+doar prin interfața web Avatars, care nu are API încă.
+
+**B. Footage propriu (poze/video puse de tine) + voce ElevenLabs separată**
+(varianta inițială, utilă dacă ai deja imagini reale ale excursiei):
+
 ```bash
 # doar banner-ul (PNG), rapid, fără ElevenLabs — bun ca preview
 PYTHONPATH=src python3 -m travel_ugc.pipeline --trip config/trips/2026-07-25-excursie-manastiri.yaml --banner-only
@@ -84,11 +107,12 @@ PYTHONPATH=src python3 -m travel_ugc.pipeline --trip config/trips/2026-07-25-exc
 # video complet, fără voce (dacă ELEVENLABS_API_KEY nu e încă setat)
 PYTHONPATH=src python3 -m travel_ugc.pipeline --trip config/trips/2026-07-25-excursie-manastiri.yaml --no-voice
 
-# video complet, cu voiceover ElevenLabs (fluxul normal, odată ce ai cheia)
+# video complet, cu voiceover ElevenLabs (TTS separat + footage-ul tău)
 PYTHONPATH=src python3 -m travel_ugc.pipeline --trip config/trips/2026-07-25-excursie-manastiri.yaml
 ```
 
-Rezultatul apare în `assets/output/<trip-id>.mp4`, gata de postat sau de
+În ambele cazuri, rezultatul apare în `assets/output/<trip-id>.mp4` (sau
+`-ai-raw.mp4` + finalul cu banner pentru varianta A), gata de postat sau de
 folosit direct ca material pentru campania Meta Ads.
 
 ## 4. Conectarea ElevenLabs

@@ -91,29 +91,36 @@ def _build_footage_video(trip: Trip, work_dir: Path, canvas_w: int, canvas_h: in
     return out_path
 
 
-def compose_video(trip: Trip, voiceover_path: str | Path | None = None) -> Path:
-    """Genereaza videoclipul final: footage + banner + (optional) voiceover.
+def overlay_banner_on_video(
+    trip: Trip,
+    base_video_path: str | Path,
+    output_path: str | Path | None = None,
+    voiceover_path: str | Path | None = None,
+    keep_base_audio: bool = True,
+) -> Path:
+    """Suprapune banner-ul text peste un videoclip deja existent (de exemplu
+    unul generat de un model AI, cu audio propriu inclus).
 
-    Daca `voiceover_path` e None, videoclipul e generat fara sunet vorbit
-    (util pentru preview rapid sau cand ElevenLabs inca nu e configurat).
+    Daca `voiceover_path` e dat, inlocuieste audio-ul din `base_video_path`
+    (folosit pentru fluxul cu voce ElevenLabs separata). Altfel, daca
+    `keep_base_audio` e True (implicit), pastreaza audio-ul din video-ul
+    de baza (folosit cand audio-ul e generat deja odata cu video-ul de AI).
     """
     ffmpeg_bin = _require_ffmpeg()
+    base_video_path = Path(base_video_path)
+    if not base_video_path.exists():
+        raise ComposeError(f"Videoclipul de baza nu exista: {base_video_path}")
 
-    from .banner import _load_template  # reutilizam parsarea template-ului
-    template = _load_template(trip.banner_template)
-    canvas_w = template["canvas"]["width"]
-    canvas_h = template["canvas"]["height"]
-
-    output_path = REPO_ROOT / trip.output_file if not Path(trip.output_file).is_absolute() else Path(trip.output_file)
+    output_path = Path(output_path) if output_path else (
+        REPO_ROOT / trip.output_file if not Path(trip.output_file).is_absolute() else Path(trip.output_file)
+    )
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
     with tempfile.TemporaryDirectory(prefix="travel_ugc_") as tmp:
         work_dir = Path(tmp)
-
-        footage_path = _build_footage_video(trip, work_dir, canvas_w, canvas_h)
         banner_path = save_banner(trip, work_dir / "banner.png")
 
-        inputs = ["-i", str(footage_path), "-i", str(banner_path)]
+        inputs = ["-i", str(base_video_path), "-i", str(banner_path)]
         filter_complex = "[0:v][1:v]overlay=0:0:format=auto[outv]"
         map_args = ["-map", "[outv]"]
 
@@ -123,6 +130,8 @@ def compose_video(trip: Trip, voiceover_path: str | Path | None = None) -> Path:
                 raise ComposeError(f"Fisierul de voiceover nu exista: {voiceover_path}")
             inputs += ["-i", str(voiceover_path)]
             map_args += ["-map", "2:a"]
+        elif keep_base_audio:
+            map_args += ["-map", "0:a?"]
 
         cmd = [
             ffmpeg_bin, "-y",
@@ -136,6 +145,24 @@ def compose_video(trip: Trip, voiceover_path: str | Path | None = None) -> Path:
         ]
         result = subprocess.run(cmd, capture_output=True)
         if result.returncode != 0:
-            raise ComposeError(f"ffmpeg a esuat la asamblarea finala:\n{result.stderr.decode(errors='ignore')}")
+            raise ComposeError(f"ffmpeg a esuat la suprapunerea banner-ului:\n{result.stderr.decode(errors='ignore')}")
 
     return output_path
+
+
+def compose_video(trip: Trip, voiceover_path: str | Path | None = None) -> Path:
+    """Genereaza videoclipul final: footage (din poze/video puse de tine)
+    + banner + (optional) voiceover.
+
+    Daca `voiceover_path` e None, videoclipul e generat fara sunet vorbit
+    (util pentru preview rapid sau cand ElevenLabs inca nu e configurat).
+    """
+    from .banner import _load_template  # reutilizam parsarea template-ului
+    template = _load_template(trip.banner_template)
+    canvas_w = template["canvas"]["width"]
+    canvas_h = template["canvas"]["height"]
+
+    with tempfile.TemporaryDirectory(prefix="travel_ugc_footage_") as tmp:
+        work_dir = Path(tmp)
+        footage_path = _build_footage_video(trip, work_dir, canvas_w, canvas_h)
+        return overlay_banner_on_video(trip, footage_path, voiceover_path=voiceover_path, keep_base_audio=False)
