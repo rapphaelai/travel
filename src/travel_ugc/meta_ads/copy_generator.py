@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from ..prompt_variations import PromptContext
+from ..prompt_variations import PromptContext, clean_price
 
 
 @dataclass
@@ -26,25 +26,19 @@ def _no_dash(text: str) -> str:
     return text.replace(" — ", ". ").replace("—", ",").replace(" – ", ". ").replace("–", ",")
 
 
-def _strip_end(text: str) -> str:
-    """Scoate punctuatia finala (!/./,), utila cand textul e inserat la
-    mijlocul altei propozitii, ca sa evitam '!.' sau ',.' duble."""
-    return text.rstrip("!.,; ").strip()
-
-
 def generate_ad_copy(ctx: PromptContext) -> MetaAdsCopy:
     when = ctx.date_line or ctx.period_line or "în curând"
     # Doar campuri in romana, orientate spre client -- location_description
     # e descrierea vizuala in engleza pentru promptul video, nu se foloseste aici.
     where = ctx.main_objective or "această excursie"
-    price = _strip_end(ctx.price_line) or "preț accesibil"
+    price = clean_price(ctx.price_line) or "preț accesibil"
     brand = ctx.brand_name
-    region = ctx.region_hint or "zonă"
+    region = ctx.region_hint or "în zonă"
 
     primary_texts = [
         (
             f"Mii de oameni vin în fiecare an la {where}. "
-            f"Un pelerinaj de neuitat, {ctx.period_line or when}, în inima {region}. "
+            f"Un pelerinaj de neuitat, {ctx.period_line or when}, {region}. "
             f"✅ Transport + cazare cu mic dejun, totul asigurat."
         ),
         (

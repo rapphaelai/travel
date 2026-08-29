@@ -12,6 +12,17 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
+def clean_price(price_line: str) -> str:
+    """Normalizeaza pretul inainte de a-l insera intr-o propozitie: scoate un
+    eventual 'doar'/'Doar' de la inceput (sabloanele isi adauga singure acest
+    cuvant, ca sa nu iasa 'doar Doar 499 lei') si punctuatia finala."""
+    text = (price_line or "").strip()
+    lowered = text.lower()
+    if lowered.startswith("doar "):
+        text = text[5:].strip()
+    return text.rstrip("!.,; ").strip()
+
+
 STYLE_SUFFIX = (
     "Style: hyper-realistic, mega natural UGC, candid, natural skin texture, "
     "no retouching, slightly imperfect framing. Real person, NOT a model."
@@ -91,7 +102,7 @@ def _angle_social_proof(ctx: PromptContext) -> PromptVariant:
     scene = _scene_clause(ctx, "soft morning light", "calm, warm expression, hand gently gesturing toward the building")
     dialogue = (
         f"Mii de oameni vin în fiecare an la {ctx.main_objective or 'acest loc'}. "
-        f"Un pelerinaj de neuitat, {ctx.period_line or 'în câteva zile'}, în inima {ctx.region_hint or 'zonei'}, "
+        f"Un pelerinaj de neuitat, {ctx.period_line or 'în câteva zile'}, {ctx.region_hint or 'în zonă'}, "
         f"unde credincioșii se roagă și își găsesc liniștea. Totul organizat, cu {ctx.brand_name}."
     )
     audio = "distant church bell, soft wind, quiet birds"
@@ -124,7 +135,7 @@ def _angle_scarcity(ctx: PromptContext) -> PromptVariant:
     scene = _scene_clause(ctx, "bright daylight", "excited energetic expression, leaning slightly toward camera")
     dialogue = (
         f"Ultimele locuri la excursia din {ctx.date_line or ctx.period_line}! "
-        f"{ctx.main_objective or 'Un traseu superb'}, doar {ctx.price_line or 'la un preț mic'}. "
+        f"{ctx.main_objective or 'Un traseu superb'}, doar {clean_price(ctx.price_line) or 'la un preț mic'}. "
         f"{ctx.cta_extra or 'Nu rata'}! Rezervă-ți locul acum, cu {ctx.brand_name}."
     )
     audio = "light upbeat outdoor ambient, birds, faint chatter of a group nearby"
@@ -135,7 +146,7 @@ def _angle_practical(ctx: PromptContext) -> PromptVariant:
     scene = _scene_clause(ctx, "clear daylight", "calm confident expression, counting briefly on fingers while speaking")
     dialogue = (
         f"Pe scurt: {ctx.period_line or 'excursia'} la {ctx.main_objective or 'destinație'}, "
-        f"plecare din {ctx.departure_city}, transport și ghid incluse, doar {ctx.price_line or 'preț accesibil'}. "
+        f"plecare din {ctx.departure_city}, transport și ghid incluse, doar {clean_price(ctx.price_line) or 'preț accesibil'}. "
         f"Simplu și organizat, cu {ctx.brand_name}."
     )
     audio = "quiet neutral ambient, faint wind, no music"
