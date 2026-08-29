@@ -173,7 +173,22 @@ PYTHONPATH=src python3 -m travel_ugc.meta_ads.cli create-campaign --trip config/
   Manager după ce verifici targetarea/bugetul, ca să nu se cheltuiască buget
   real fără supervizare. Adaugă `--activate` doar când ești sigur.
 
-## 6. Dashboard web (recomandat pentru uz curent)
+## 6. Dashboard-ul pe internet (Render)
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/rapphaelai/travel/tree/claude/elevenabs-ugc-meta-ads-4qvosw)
+
+1. Apeși butonul de mai sus (te duce la Render, îți cere să conectezi contul GitHub dacă nu e deja).
+2. Render citește `render.yaml` din repo și pregătește automat serviciul (Docker, ffmpeg inclus).
+3. La pasul de configurare, îți cere valoarea pentru **`ELEVENLABS_API_KEY`** -- o pui acolo (nu ajunge niciodată în git, se salvează doar ca secret în Render).
+4. Confirmi planul **Starter** (planul `Free` nu suportă discul persistent din `render.yaml` -- fără el, contextele și video-urile generate se pierd la fiecare redeploy/restart).
+5. Deploy. Primești un URL public de tip `https://raphael-travel-ugc-dashboard.onrender.com` -- ăla e dashboard-ul tău, accesibil de oriunde.
+
+**De reținut:**
+- Discul persistent (`ugc-data`, 1GB, montat pe `/app/data`) ține atât contextele excursiilor cât și video-urile generate. Dacă rulezi mult, poți crește dimensiunea din dashboard-ul Render (Settings -> Disks).
+- N-am putut testa build-ul Docker chiar aici (acest mediu de lucru nu permite Docker-in-Docker), dar fiecare pas din `Dockerfile` (Python 3.11-slim, `apt-get install ffmpeg`, `pip install -r requirements.txt`) e identic cu ce am rulat deja cu succes direct în acest sandbox -- verifică doar log-ul primului deploy din Render ca să confirmi.
+- Butonul de mai sus pornește deploy-ul din branch-ul curent (`claude/elevenabs-ugc-meta-ads-4qvosw`). După ce faci merge pe branch-ul principal, poți schimba branch-ul serviciului din Render (Settings -> Branch) sau redeploya de acolo.
+
+## 7. Dashboard web (local, pentru testare rapidă)
 
 Pe lângă CLI, există un dashboard local unde adaugi contextul unei excursii
 prin formular, primești automat **7 variante de prompt video** (unghiuri de
@@ -204,7 +219,7 @@ mereu prompturile generate înainte să apeși "Generează video-uri" (poți
 edita direct în căsuța de text), mai ales câmpurile de regiune/obiectiv, ca
 să sune natural în propoziție.
 
-## 7. Fluxul complet, per excursie nouă (CLI)
+## 8. Fluxul complet, per excursie nouă (CLI)
 
 ```bash
 # 1. adaugi config/trips/noua-excursie.yaml + pozele/videoclipul în assets/footage/

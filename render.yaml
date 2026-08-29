@@ -1,0 +1,25 @@
+# Render Blueprint -- permite butonul "Deploy to Render" din README sa
+# creeze automat serviciul, citind configul de aici. Doc:
+# https://render.com/docs/blueprint-spec
+
+services:
+  - type: web
+    name: raphael-travel-ugc-dashboard
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: starter
+    healthCheckPath: /
+    envVars:
+      # Cheia ta ElevenLabs -- NU e in acest fisier; Render o cere separat,
+      # printr-un prompt in formularul de deploy (sync: false = introdusa manual,
+      # niciodata comisa in git).
+      - key: ELEVENLABS_API_KEY
+        sync: false
+    disk:
+      # Fara disc persistent, contextele si video-urile generate se pierd la
+      # fiecare redeploy/restart (storage-ul containerului e efemer). Discul
+      # necesita planul "starter" sau mai mare -- nu e disponibil pe planul
+      # gratuit "free".
+      name: ugc-data
+      mountPath: /app/data
+      sizeGB: 1

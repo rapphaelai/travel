@@ -11,8 +11,12 @@ from pathlib import Path
 from typing import Any
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
+# Ambele traiesc sub data/, ca un singur disc persistent (ex: render.yaml)
+# sa acopere si contextele si video-urile generate -- altfel un redeploy
+# fara volum montat pe assets/output/ ar pierde doar video-urile, nu si
+# contextele, ceea ce ar fi confuz.
 DATA_DIR = REPO_ROOT / "data" / "contexts"
-MEDIA_DIR = REPO_ROOT / "assets" / "output" / "web"
+MEDIA_DIR = REPO_ROOT / "data" / "media"
 
 _lock = threading.Lock()
 
