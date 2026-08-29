@@ -1,7 +1,10 @@
 """Dashboard web pentru automatizarea UGC Raphael Travel.
 
 Rulare:
-    ELEVENLABS_API_KEY=sk_... PYTHONPATH=src uvicorn travel_ugc.web.app:app --reload --port 8000
+    PYTHONPATH=src uvicorn travel_ugc.web.app:app --reload --port 8000
+
+Citeste automat cheia din fisierul .env de la radacina proiectului (vezi
+.env.example) -- nu mai trebuie pusa manual in linia de comanda.
 
 Apoi deschizi http://localhost:8000 in browser.
 
@@ -22,7 +25,12 @@ import tempfile
 from pathlib import Path
 from typing import Optional
 
+from dotenv import load_dotenv
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
+
+# Incarca .env de la radacina proiectului (langa README.md), daca exista --
+# in productie (ex: Render), variabilele vin din mediu si load_dotenv() e un no-op.
+load_dotenv(Path(__file__).resolve().parents[3] / ".env")
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel

@@ -16,6 +16,8 @@ import argparse
 import sys
 from pathlib import Path
 
+from dotenv import load_dotenv
+
 from .script_builder import build_caption, build_narration_script, build_video_prompt
 from .trip import load_trip
 from .video.banner import save_banner
@@ -24,6 +26,7 @@ from .video.elevenlabs_flows import DEFAULT_VIDEO_MODEL, VideoGenerationError, g
 from .voice.elevenlabs_client import ElevenLabsError, text_to_speech
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
+load_dotenv(REPO_ROOT / ".env")
 
 
 def main(argv: list[str] | None = None) -> int:

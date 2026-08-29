@@ -13,12 +13,15 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
+from dotenv import load_dotenv
+
 from ..trip import load_trip
 from .campaign_builder import create_campaign_for_trip
 from .client import MetaAdsError
 from .performance import rank_formats
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
+load_dotenv(REPO_ROOT / ".env")
 
 DATE_PRESET_BY_DAYS = {7: "last_7d", 14: "last_14d", 30: "last_30d", 90: "last_90d"}
 
