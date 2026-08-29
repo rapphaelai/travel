@@ -173,7 +173,38 @@ PYTHONPATH=src python3 -m travel_ugc.meta_ads.cli create-campaign --trip config/
   Manager după ce verifici targetarea/bugetul, ca să nu se cheltuiască buget
   real fără supervizare. Adaugă `--activate` doar când ești sigur.
 
-## 6. Fluxul complet, per excursie nouă
+## 6. Dashboard web (recomandat pentru uz curent)
+
+Pe lângă CLI, există un dashboard local unde adaugi contextul unei excursii
+prin formular, primești automat **7 variante de prompt video** (unghiuri de
+copywriting diferite: urgență, dovadă socială, storytelling, problemă →
+soluție, scarcitate, practic, invitație caldă), poți edita orice variantă,
+apoi ceri **4 generări video** (implicit `veo-3.1-fast-generate-001`, 8
+secunde, 9:16, audio inclus) pentru varianta aleasă -- fiecare rezultat
+primește automat banner-ul text. La final, generezi și **câmpurile de Meta
+Ads** (4 variante de text principal, 4 titluri, 3 descrieri ale apelului),
+fără linii de pauză (em/en dash), gata de copy-paste în Ads Manager.
+
+```bash
+ELEVENLABS_API_KEY=sk_... PYTHONPATH=src uvicorn travel_ugc.web.app:app --port 8000
+```
+
+Deschizi apoi [http://localhost:8000](http://localhost:8000). Poți încărca
+opțional o poză de referință a prezentatorului (persoana din materialele
+tale) -- e trimisă către ElevenLabs ca imagine de referință, ca subiectul să
+rămână vizual consistent între cele 4 variante generate.
+
+Datele fiecărei excursii (context, prompturi, joburi) se salvează local în
+`data/contexts/*.json`, iar video-urile generate în `assets/output/web/` --
+ambele foldere sunt în `.gitignore`, nu ajung în git.
+
+**Notă**: motorul de prompturi și de texte Meta Ads nu apelează niciun LLM
+extern -- sunt șabloane completate din câmpurile formularului. Verifică
+mereu prompturile generate înainte să apeși "Generează video-uri" (poți
+edita direct în căsuța de text), mai ales câmpurile de regiune/obiectiv, ca
+să sune natural în propoziție.
+
+## 7. Fluxul complet, per excursie nouă (CLI)
 
 ```bash
 # 1. adaugi config/trips/noua-excursie.yaml + pozele/videoclipul în assets/footage/

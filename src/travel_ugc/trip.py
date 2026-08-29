@@ -61,6 +61,41 @@ class Trip:
         return self.start_date == self.end_date
 
 
+def make_banner_trip(
+    id: str,
+    hook_line: str,
+    start_date: str,
+    end_date: str,
+    objectives_count: int,
+    price_line: str,
+    banner_template: str = "config/banner_template.yaml",
+    output_file: str | None = None,
+) -> Trip:
+    """Trip 'minimal', cu doar campurile necesare pentru randarea banner-ului
+    (folosit de dashboard-ul web, unde restul detaliilor traiesc separat in
+    context-ul de prompt, nu intr-un fisier YAML complet)."""
+    return Trip(
+        id=id,
+        hook_line=hook_line,
+        start_date=_parse_date(start_date),
+        end_date=_parse_date(end_date),
+        objectives_count=objectives_count,
+        price_line=price_line,
+        destination="",
+        objectives=[],
+        selling_points=[],
+        cta="",
+        price_details="",
+        tone="",
+        voice={},
+        footage={},
+        banner_template=banner_template,
+        output_file=output_file or f"assets/output/{id}.mp4",
+        meta_ads={},
+        raw={},
+    )
+
+
 def load_trip(path: str | Path) -> Trip:
     path = Path(path)
     data = yaml.safe_load(path.read_text(encoding="utf-8"))

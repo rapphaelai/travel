@@ -22,33 +22,65 @@ import requests
 
 from ..voice.elevenlabs_client import API_BASE, ElevenLabsError, _api_key
 
-DEFAULT_VIDEO_MODEL = "bytedance-seedance-v2.5"
+DEFAULT_VIDEO_MODEL = "veo-3.1-fast-generate-001"
 
 
 class VideoGenerationError(ElevenLabsError):
     pass
 
 
+def upload_asset(file_path: str | Path, name: str | None = None) -> str:
+    """Incarca un fisier (ex: poza de referinta a prezentatorului) ca asset
+    ElevenLabs si returneaza asset_id, folosibil apoi ca referinta de imagine
+    intr-o generare video (subiect consistent intre variante)."""
+    file_path = Path(file_path)
+    if not file_path.exists():
+        raise VideoGenerationError(f"Fisierul de referinta nu exista: {file_path}")
+    with open(file_path, "rb") as f:
+        resp = requests.post(
+            f"{API_BASE}/assets",
+            headers={"xi-api-key": _api_key()},
+            data={"name": name or file_path.name},
+            files={"file": (file_path.name, f)},
+            timeout=60,
+        )
+    if resp.status_code != 200:
+        raise VideoGenerationError(f"Upload-ul imaginii de referinta a esuat ({resp.status_code}): {resp.text}")
+    return resp.json()["asset_id"]
+
+
 def create_video_generation(
     prompt: str,
     model_id: str = DEFAULT_VIDEO_MODEL,
-    duration_secs: int = 30,
+    duration_secs: int = 8,
     aspect_ratio: str = "9:16",
     resolution: str = "1080p",
     generate_audio: bool = True,
+    reference_image_asset_ids: list[str] | None = None,
 ) -> str:
-    """Porneste o generare video async si returneaza generation_id."""
+    """Porneste o generare video async si returneaza generation_id.
+
+    `reference_image_asset_ids` (optional, max 3, doar pentru modelele Veo):
+    id-uri de assets (vezi upload_asset) folosite ca referinta vizuala, ca
+    subiectul (prezentatorul) sa ramana consistent intre generari diferite.
+    """
+    payload = {
+        "model_id": model_id,
+        "prompt": prompt,
+        "duration_secs": duration_secs,
+        "aspect_ratio": aspect_ratio,
+        "resolution": resolution,
+        "generate_audio": generate_audio,
+    }
+    if reference_image_asset_ids:
+        payload["images"] = [
+            {"type": "asset", "asset_id": asset_id} for asset_id in reference_image_asset_ids
+        ]
+
     resp = requests.post(
         f"{API_BASE}/flows/video",
         headers={"xi-api-key": _api_key(), "Content-Type": "application/json"},
-        json={
-            "model_id": model_id,
-            "prompt": prompt,
-            "duration_secs": duration_secs,
-            "aspect_ratio": aspect_ratio,
-            "resolution": resolution,
-            "generate_audio": generate_audio,
-        },
+        json=payload,
         timeout=60,
     )
     if resp.status_code != 200:
@@ -99,9 +131,10 @@ def generate_video(
     prompt: str,
     output_path: str | Path,
     model_id: str = DEFAULT_VIDEO_MODEL,
-    duration_secs: int = 30,
+    duration_secs: int = 8,
     aspect_ratio: str = "9:16",
     resolution: str = "1080p",
+    reference_image_asset_ids: list[str] | None = None,
     on_status: callable | None = None,
 ) -> Path:
     """Fluxul complet: creeaza generarea, asteapta finalizarea, descarca fisierul."""
@@ -111,6 +144,7 @@ def generate_video(
         duration_secs=duration_secs,
         aspect_ratio=aspect_ratio,
         resolution=resolution,
+        reference_image_asset_ids=reference_image_asset_ids,
     )
     if on_status:
         on_status(f"Generare video pornita (id={generation_id}, model={model_id}, durata={duration_secs}s)")

@@ -1,0 +1,319 @@
+<!doctype html>
+<html lang="ro">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Raphael Travel — UGC Dashboard</title>
+<style>
+  :root {
+    --bg: #f7f5f2; --panel: #ffffff; --ink: #1f2430; --muted: #6b7280;
+    --line: #e6e2db; --accent: #1e6f5c; --accent-ink: #ffffff;
+    --warn: #b45309; --danger: #b91c1c; --radius: 12px;
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+  header { padding: 20px 28px; border-bottom: 1px solid var(--line); background: var(--panel); }
+  header h1 { margin:0; font-size: 19px; }
+  header p { margin: 4px 0 0; color: var(--muted); font-size: 13px; }
+  main { max-width: 980px; margin: 0 auto; padding: 24px; display:flex; flex-direction:column; gap:24px; }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px; }
+  .panel h2 { margin: 0 0 14px; font-size: 15px; }
+  .grid { display:grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  label { display:block; font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+  input, textarea, select { width:100%; padding: 8px 10px; border:1px solid var(--line); border-radius: 8px; font-size: 13px; font-family: inherit; background:#fdfcfa; }
+  textarea { resize: vertical; }
+  .field { margin-bottom: 12px; }
+  .field.full { grid-column: 1 / -1; }
+  button { cursor:pointer; border:none; border-radius: 8px; padding: 9px 14px; font-size: 13px; font-weight:600; }
+  button.primary { background: var(--accent); color: var(--accent-ink); }
+  button.ghost { background: #efece6; color: var(--ink); }
+  button.small { padding: 5px 9px; font-size: 12px; }
+  button:disabled { opacity:.5; cursor:not-allowed; }
+  .row { display:flex; gap:10px; align-items:center; flex-wrap: wrap; }
+  .contexts-list { display:flex; flex-direction:column; gap:6px; max-height: 220px; overflow:auto; }
+  .contexts-list button { text-align:left; background:#fdfcfa; border:1px solid var(--line); }
+  .contexts-list button.active { border-color: var(--accent); background: #eaf4f1; }
+  .prompt-card { border:1px solid var(--line); border-radius: 10px; padding: 12px; margin-bottom: 12px; background:#fdfcfa; }
+  .prompt-card .label { font-weight:600; font-size:13px; margin-bottom:6px; }
+  .prompt-card textarea { min-height: 110px; font-size: 12.5px; }
+  .takes { display:grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 10px; }
+  .take { border:1px solid var(--line); border-radius: 8px; padding: 8px; font-size: 12px; background:#fff; }
+  .take video { width:100%; border-radius:6px; display:block; margin-top:6px; }
+  .status-pending { color: var(--muted); }
+  .status-generating, .status-banner { color: var(--warn); }
+  .status-completed { color: var(--accent); }
+  .status-failed { color: var(--danger); }
+  .copybox { border:1px solid var(--line); border-radius: 8px; padding: 10px; margin-bottom: 8px; background:#fdfcfa; display:flex; justify-content:space-between; gap:10px; align-items:flex-start; }
+  .copybox p { margin:0; font-size: 13px; white-space: pre-wrap; }
+  .copybox button { flex-shrink:0; }
+  .subhead { font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; margin: 14px 0 6px; }
+  .hint { font-size: 12px; color: var(--muted); }
+  .badge { display:inline-block; padding: 2px 8px; border-radius: 999px; background:#eaf4f1; color: var(--accent); font-size: 11px; font-weight:600; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Raphael Travel — Dashboard UGC</h1>
+  <p>Context excursie → 7 variante de prompt → 4 video-uri AI (veo-3.1-fast, 8s, audio ON) + banner → câmpuri Meta Ads gata de copy-paste.</p>
+</header>
+<main>
+
+  <section class="panel">
+    <h2>1. Excursii salvate</h2>
+    <div class="row">
+      <div class="contexts-list" id="contextsList" style="flex:1"></div>
+      <button class="ghost" id="newContextBtn">+ Excursie nouă</button>
+    </div>
+  </section>
+
+  <section class="panel" id="formPanel" hidden>
+    <h2>2. Context excursie</h2>
+    <div class="grid">
+      <div class="field"><label>Hook banner (ex: Hai cu noi în excursie)</label><input id="f_hook_line" /></div>
+      <div class="field"><label>Preț banner (ex: Excursie de o zi, ieftină!)</label><input id="f_price_line" /></div>
+      <div class="field"><label>Data început</label><input type="date" id="f_start_date" /></div>
+      <div class="field"><label>Data sfârșit</label><input type="date" id="f_end_date" /></div>
+      <div class="field"><label>Nr. obiective (banner)</label><input type="number" id="f_objectives_count" value="5" /></div>
+      <div class="field"><label>Oraș plecare</label><input id="f_departure_city" value="București" /></div>
+      <div class="field full"><label>Descriere locație pentru scena video (engleză, ex: "a stunning Ilfov monastery")</label><input id="f_location_description" /></div>
+      <div class="field"><label>Regiune pentru scenă (engleză, opțional, ex: "near Bucharest")</label><input id="f_region_hint_en" /></div>
+      <div class="field"><label>Regiune pentru replică (română, ex: "aproape de București")</label><input id="f_region_hint" /></div>
+      <div class="field"><label>Obiectiv principal (ro, ex: Mănăstirea Prislop)</label><input id="f_main_objective" /></div>
+      <div class="field"><label>Data pentru replică (ex: 19 SEPTEMBRIE)</label><input id="f_date_line" /></div>
+      <div class="field"><label>Perioadă pentru replică (ex: 4-5 septembrie)</label><input id="f_period_line" /></div>
+      <div class="field"><label>Preț pentru replică (ex: 499 lei)</label><input id="f_price_line_dialogue" /></div>
+      <div class="field"><label>Brand</label><input id="f_brand_name" value="Raphael Travel" /></div>
+      <div class="field full"><label>Descriere prezentator (en)</label><input id="f_presenter_description" value="a Romanian person in their 60s, dressed well for her age casual" /></div>
+      <div class="field full"><label>CTA extra (opțional, ro)</label><input id="f_cta_extra" /></div>
+      <div class="field full"><label>Context liber (paste orice altceva relevant)</label><textarea id="f_free_context" rows="3"></textarea></div>
+      <div class="field full"><label>Poză de referință prezentator (opțional, pentru subiect consistent)</label><input type="file" id="f_reference_image" accept="image/*" /></div>
+    </div>
+    <button class="primary" id="saveContextBtn">Salvează excursia</button>
+    <span class="hint" id="saveHint"></span>
+  </section>
+
+  <section class="panel" id="promptsPanel" hidden>
+    <h2>3. Variante de prompt video</h2>
+    <button class="primary" id="genPromptsBtn">Generează 7 variante</button>
+    <div id="promptsList" style="margin-top:14px"></div>
+  </section>
+
+  <section class="panel" id="jobsPanel" hidden>
+    <h2>4. Video-uri generate</h2>
+    <div id="jobsList"></div>
+  </section>
+
+  <section class="panel" id="metaPanel" hidden>
+    <h2>5. Câmpuri Meta Ads</h2>
+    <button class="primary" id="genMetaBtn">Generează câmpurile Meta Ads</button>
+    <div class="subhead">Text principal</div>
+    <div id="metaPrimary"></div>
+    <div class="subhead">Titlu</div>
+    <div id="metaHeadlines"></div>
+    <div class="subhead">Descrierea apelului</div>
+    <div id="metaDescriptions"></div>
+  </section>
+
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+let currentId = null;
+let pollTimers = {};
+
+async function api(path, opts) {
+  const res = await fetch(path, opts);
+  if (!res.ok) {
+    const t = await res.text();
+    throw new Error(t);
+  }
+  return res.json();
+}
+
+function fieldMap() {
+  return {
+    hook_line: 'f_hook_line', price_line: 'f_price_line', start_date: 'f_start_date',
+    end_date: 'f_end_date', objectives_count: 'f_objectives_count', departure_city: 'f_departure_city',
+    location_description: 'f_location_description', region_hint: 'f_region_hint',
+    region_hint_en: 'f_region_hint_en',
+    main_objective: 'f_main_objective', date_line: 'f_date_line', period_line: 'f_period_line',
+    brand_name: 'f_brand_name', presenter_description: 'f_presenter_description',
+    cta_extra: 'f_cta_extra', free_context: 'f_free_context',
+  };
+}
+
+async function refreshContextsList() {
+  const items = await api('/api/contexts');
+  const el = $('contextsList');
+  el.innerHTML = '';
+  items.forEach(ctx => {
+    const b = document.createElement('button');
+    b.textContent = `${ctx.hook_line || '(fara titlu)'} — ${ctx.start_date}`;
+    b.className = ctx.id === currentId ? 'active' : '';
+    b.onclick = () => selectContext(ctx.id);
+    el.appendChild(b);
+  });
+}
+
+function showFormFor(ctx) {
+  $('formPanel').hidden = false;
+  const map = fieldMap();
+  for (const [key, elId] of Object.entries(map)) {
+    if (ctx && ctx[key] !== undefined && ctx[key] !== null) $(elId).value = ctx[key];
+  }
+  $('f_price_line_dialogue').value = (ctx && ctx.price_line) || '';
+}
+
+async function selectContext(id) {
+  currentId = id;
+  const ctx = await api(`/api/contexts/${id}`);
+  showFormFor(ctx);
+  $('promptsPanel').hidden = false;
+  $('metaPanel').hidden = false;
+  renderPrompts(ctx.prompts || []);
+  renderJobs(ctx.jobs || {});
+  if (ctx.meta_ads_copy) renderMeta(ctx.meta_ads_copy);
+  refreshContextsList();
+}
+
+$('newContextBtn').onclick = () => { currentId = null; showFormFor(null); $('promptsPanel').hidden = true; $('jobsPanel').hidden = true; $('metaPanel').hidden = true; };
+
+$('saveContextBtn').onclick = async () => {
+  const fd = new FormData();
+  const map = fieldMap();
+  for (const [key, elId] of Object.entries(map)) fd.append(key, $(elId).value);
+  fd.set('price_line', $('f_price_line_dialogue').value || $('f_price_line').value);
+  const fileEl = $('f_reference_image');
+  if (fileEl.files[0]) fd.append('reference_image', fileEl.files[0]);
+  $('saveHint').textContent = 'Se salvează...';
+  try {
+    const ctx = await api('/api/contexts', { method: 'POST', body: fd });
+    currentId = ctx.id;
+    $('saveHint').textContent = 'Salvat.';
+    $('promptsPanel').hidden = false;
+    $('metaPanel').hidden = false;
+    await refreshContextsList();
+  } catch (e) {
+    $('saveHint').textContent = 'Eroare: ' + e.message;
+  }
+};
+
+function renderPrompts(prompts) {
+  const el = $('promptsList');
+  el.innerHTML = '';
+  prompts.forEach(p => {
+    const card = document.createElement('div');
+    card.className = 'prompt-card';
+    card.innerHTML = `
+      <div class="label"><span class="badge">${p.angle_label}</span></div>
+      <textarea data-angle="${p.angle_id}">${p.prompt}</textarea>
+      <div class="row" style="margin-top:8px">
+        <button class="ghost small" data-save="${p.angle_id}">Salvează editarea</button>
+        <button class="primary small" data-gen="${p.angle_id}">Generează 4 video-uri (veo-3.1-fast, 8s, audio ON)</button>
+      </div>`;
+    el.appendChild(card);
+  });
+  el.querySelectorAll('[data-save]').forEach(btn => btn.onclick = async () => {
+    const angle = btn.dataset.save;
+    const text = el.querySelector(`textarea[data-angle="${angle}"]`).value;
+    await api(`/api/contexts/${currentId}/prompts/${angle}`, {
+      method: 'PATCH', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({prompt: text})
+    });
+  });
+  el.querySelectorAll('[data-gen]').forEach(btn => btn.onclick = async () => {
+    const angle = btn.dataset.gen;
+    const text = el.querySelector(`textarea[data-angle="${angle}"]`).value;
+    btn.disabled = true;
+    try {
+      const { job_id } = await api(`/api/contexts/${currentId}/generate`, {
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ angle_id: angle, prompt: text, take_count: 4, duration_secs: 8 })
+      });
+      $('jobsPanel').hidden = false;
+      pollJob(job_id);
+    } finally {
+      btn.disabled = false;
+    }
+  });
+}
+
+$('genPromptsBtn').onclick = async () => {
+  if (!currentId) { alert('Salvează întâi excursia.'); return; }
+  const prompts = await api(`/api/contexts/${currentId}/prompts`, { method: 'POST' });
+  renderPrompts(prompts);
+};
+
+function takeStatusLabel(t) {
+  if (t.status === 'pending') return 'În așteptare...';
+  if (t.status === 'generating') return t.status_detail || 'Se generează video-ul...';
+  if (t.status === 'banner') return 'Se aplică banner-ul...';
+  if (t.status === 'completed') return 'Gata';
+  if (t.status === 'failed') return 'Eșuat: ' + (t.error || '');
+  return t.status;
+}
+
+function renderJob(jobId, job) {
+  let el = document.getElementById('job-' + jobId);
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'job-' + jobId;
+    el.className = 'panel';
+    el.style.marginBottom = '12px';
+    $('jobsList').prepend(el);
+  }
+  el.innerHTML = `<div class="label"><span class="badge">${job.angle_id}</span> ${job.status === 'done' ? '' : '(generare în curs...)'}</div>
+    <div class="takes">${job.takes.map(t => `
+      <div class="take">
+        <div class="status-${t.status}">Take ${t.index + 1}: ${takeStatusLabel(t)}</div>
+        ${t.video_url ? `<video controls src="${t.video_url}"></video><a href="${t.video_url}" download>Descarcă</a>` : ''}
+      </div>`).join('')}</div>`;
+}
+
+function renderJobs(jobs) {
+  $('jobsList').innerHTML = '';
+  Object.entries(jobs).forEach(([jobId, job]) => renderJob(jobId, job));
+}
+
+function pollJob(jobId) {
+  if (pollTimers[jobId]) return;
+  const tick = async () => {
+    try {
+      const job = await api(`/api/contexts/${currentId}/jobs/${jobId}`);
+      renderJob(jobId, job);
+      if (job.status === 'done') { clearInterval(pollTimers[jobId]); delete pollTimers[jobId]; return; }
+    } catch (e) { /* ignore transient */ }
+  };
+  tick();
+  pollTimers[jobId] = setInterval(tick, 4000);
+}
+
+function copyBox(container, text) {
+  const box = document.createElement('div');
+  box.className = 'copybox';
+  const p = document.createElement('p');
+  p.textContent = text;
+  const btn = document.createElement('button');
+  btn.className = 'ghost small';
+  btn.textContent = 'Copiază';
+  btn.onclick = () => { navigator.clipboard.writeText(text); btn.textContent = 'Copiat!'; setTimeout(() => btn.textContent = 'Copiază', 1200); };
+  box.appendChild(p); box.appendChild(btn);
+  container.appendChild(box);
+}
+
+function renderMeta(copy) {
+  $('metaPrimary').innerHTML = ''; $('metaHeadlines').innerHTML = ''; $('metaDescriptions').innerHTML = '';
+  copy.primary_texts.forEach(t => copyBox($('metaPrimary'), t));
+  copy.headlines.forEach(t => copyBox($('metaHeadlines'), t));
+  copy.descriptions.forEach(t => copyBox($('metaDescriptions'), t));
+}
+
+$('genMetaBtn').onclick = async () => {
+  if (!currentId) { alert('Salvează întâi excursia.'); return; }
+  const copy = await api(`/api/contexts/${currentId}/meta-ads`, { method: 'POST' });
+  renderMeta(copy);
+};
+
+refreshContextsList();
+</script>
+</body>
+</html>

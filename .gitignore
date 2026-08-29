@@ -12,5 +12,9 @@ __pycache__/
 assets/output/*
 !assets/output/.gitkeep
 
+# Date locale ale dashboard-ului web (context excursii + video-uri generate) --
+# se regenereaza din uz, nu are rost sa fie versionate.
+data/
+
 # OS
 .DS_Store

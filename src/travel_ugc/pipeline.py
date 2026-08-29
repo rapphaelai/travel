@@ -38,7 +38,7 @@ def main(argv: list[str] | None = None) -> int:
              "(implicit veo-3.1-generate-001, max 8s), in loc sa asamblezi footage propriu + TTS separat.",
     )
     parser.add_argument("--ai-video-model", default=DEFAULT_VIDEO_MODEL, help="model_id pentru --ai-video")
-    parser.add_argument("--ai-video-duration", type=int, default=8, help="Durata in secunde pentru --ai-video")
+    parser.add_argument("--ai-video-duration", type=int, default=8, help="Durata in secunde pentru --ai-video (max 8 pentru modelele Veo)")
     args = parser.parse_args(argv)
 
     trip = load_trip(args.trip)
