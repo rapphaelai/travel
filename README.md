@@ -178,13 +178,14 @@ PYTHONPATH=src python3 -m travel_ugc.meta_ads.cli create-campaign --trip config/
 [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/rapphaelai/travel/tree/claude/elevenabs-ugc-meta-ads-4qvosw)
 
 1. Apeși butonul de mai sus (te duce la Render, îți cere să conectezi contul GitHub dacă nu e deja).
-2. Render citește `render.yaml` din repo și pregătește automat serviciul (Docker, ffmpeg inclus).
+2. Render citește `render.yaml` din repo și pregătește automat serviciul (Docker, ffmpeg inclus), pe **planul gratuit ("Free")** -- fără card, fără cost.
 3. La pasul de configurare, îți cere valoarea pentru **`ELEVENLABS_API_KEY`** -- o pui acolo (nu ajunge niciodată în git, se salvează doar ca secret în Render).
-4. Confirmi planul **Starter** (planul `Free` nu suportă discul persistent din `render.yaml` -- fără el, contextele și video-urile generate se pierd la fiecare redeploy/restart).
-5. Deploy. Primești un URL public de tip `https://raphael-travel-ugc-dashboard.onrender.com` -- ăla e dashboard-ul tău, accesibil de oriunde.
+4. Deploy. Primești un URL public de tip `https://raphael-travel-ugc-dashboard.onrender.com` -- ăla e dashboard-ul tău, accesibil de oriunde.
 
-**De reținut:**
-- Discul persistent (`ugc-data`, 1GB, montat pe `/app/data`) ține atât contextele excursiilor cât și video-urile generate. Dacă rulezi mult, poți crește dimensiunea din dashboard-ul Render (Settings -> Disks).
+**Limitările planului gratuit, ca să știi la ce să te aștepți:**
+- **Adoarme din inactivitate**: dacă nu-l accesezi ~15 minute, serverul se oprește; următoarea cerere îl trezește, dar durează 30-60 secunde prima încărcare. Normal, nu e o eroare.
+- **Fără disc persistent**: contextele excursiilor și video-urile generate trăiesc doar în storage-ul containerului. Rămân acolo cât timp serviciul e "treaz" (inclusiv după ce adoarme și se trezește), dar **se pierd la fiecare redeploy sau restart manual**. Descarcă video-urile importante imediat după generare, nu te baza pe dashboard ca arhivă permanentă.
+- Dacă la un moment dat vrei persistență reală între redeploy-uri, treci serviciul pe planul **Starter** (~7$/lună) din Render și adaugă-i un disc -- spune-mi și îți pun eu configul înapoi.
 - N-am putut testa build-ul Docker chiar aici (acest mediu de lucru nu permite Docker-in-Docker), dar fiecare pas din `Dockerfile` (Python 3.11-slim, `apt-get install ffmpeg`, `pip install -r requirements.txt`) e identic cu ce am rulat deja cu succes direct în acest sandbox -- verifică doar log-ul primului deploy din Render ca să confirmi.
 - Butonul de mai sus pornește deploy-ul din branch-ul curent (`claude/elevenabs-ugc-meta-ads-4qvosw`). După ce faci merge pe branch-ul principal, poți schimba branch-ul serviciului din Render (Settings -> Branch) sau redeploya de acolo.
 
