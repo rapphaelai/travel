@@ -1,0 +1,76 @@
+# Stilul banner-ului text suprapus peste videoclipurile UGC.
+# Gandit sa reproduca formatul din pozele Raphael Academy:
+#   panglica 1 (sus): hook-ul ofertei, fundal inchis, text alb bold
+#   panglica 2: perioada excursiei + numarul de obiective, accent galben
+#   panglica 3 (jos): pretul / argumentul de conversie ("EXCURSIE DE O ZI IEFTINA")
+#
+# Poti crea variante multiple (ex: banner_template_iarna.yaml) si le referi
+# din fiecare fisier de excursie cu campul `banner_template`.
+
+canvas:
+  # Rezolutia de referinta pentru pozitionare; imaginea/video-ul de fundal
+  # e adus automat la acest format (9:16, potrivit pentru Reels/TikTok/Stories).
+  width: 1080
+  height: 1920
+
+fonts:
+  bold: assets/fonts/DejaVuSans-Bold.ttf
+  regular: assets/fonts/DejaVuSans.ttf
+
+ribbons:
+  - id: hook
+    text_field: hook_line        # camp din fisierul excursiei
+    position: top
+    offset_y: 60
+    background_color: [17, 24, 39, 235]     # bleumarin aproape negru, opac
+    text_color: [255, 255, 255, 255]
+    font: bold
+    font_size: 64
+    padding_x: 40
+    padding_y: 24
+    max_width_ratio: 0.92
+    align: center
+    letter_spacing: 0
+    uppercase: true
+
+  - id: period
+    text_field: period_line      # generat automat din start_date/end_date
+    position: top
+    offset_y: 200
+    background_color: [234, 179, 8, 255]    # galben accent
+    text_color: [17, 24, 39, 255]
+    font: bold
+    font_size: 56
+    padding_x: 36
+    padding_y: 18
+    max_width_ratio: 0.92
+    align: center
+    uppercase: true
+
+  - id: objectives
+    text_field: objectives_line  # ex: "5 OBIECTIVE"
+    position: top
+    offset_y: 300
+    background_color: [17, 24, 39, 235]
+    text_color: [255, 255, 255, 255]
+    font: bold
+    font_size: 48
+    padding_x: 36
+    padding_y: 16
+    max_width_ratio: 0.92
+    align: center
+    uppercase: true
+
+  - id: price
+    text_field: price_line
+    position: bottom
+    offset_y: 90
+    background_color: [220, 38, 38, 255]    # rosu, buton de conversie
+    text_color: [255, 255, 255, 255]
+    font: bold
+    font_size: 60
+    padding_x: 40
+    padding_y: 26
+    max_width_ratio: 0.92
+    align: center
+    uppercase: true

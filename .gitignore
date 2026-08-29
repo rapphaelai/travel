@@ -1,0 +1,16 @@
+# Secrete -- nu se comit niciodata
+.env
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+*.egg-info/
+
+# Output generat de pipeline (video/audio/banner) -- se regenereaza oricand
+# din config/trips/*.yaml, nu are rost sa fie versionat si e greu (fisiere mari).
+assets/output/*
+!assets/output/.gitkeep
+
+# OS
+.DS_Store

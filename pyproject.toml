@@ -1,0 +1,8 @@
+[project]
+name = "travel-ugc-pipeline"
+version = "0.1.0"
+description = "Automatizare UGC video + banner text + Meta Ads pentru Raphael Academy/Travel"
+requires-python = ">=3.10"
+
+[tool.setuptools.packages.find]
+where = ["src"]

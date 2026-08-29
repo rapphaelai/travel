@@ -1,0 +1,60 @@
+# Exemplu de fisier de excursie -- unitatea de input a automatizarii.
+# Adaugi un fisier nou ca acesta per excursie, apoi rulezi:
+#   python -m travel_ugc.pipeline --trip config/trips/2026-07-25-excursie-manastiri.yaml
+# si pipeline-ul genereaza automat: script de voce -> voiceover ElevenLabs
+# -> banner text -> videoclip UGC final cu banner + voce suprapuse.
+
+id: excursie-manastiri-25-iulie
+
+# --- continutul care apare pe banner (ca in poza de referinta) ---
+hook_line: "Hai cu noi in excursie"
+start_date: "2026-07-25"
+end_date: "2026-07-25"          # egal cu start_date => excursie de o zi
+objectives_count: 5
+price_line: "Excursie de o zi, ieftina!"
+
+# --- brief pentru scriptul de voce UGC (folosit la generarea naratiunii) ---
+destination: "manastirile din nordul Olteniei"
+objectives:
+  - "Manastirea Polovragi"
+  - "Peștera Polovragi"
+  - "Cheile Olteției"
+  - "Manastirea Horezu"
+  - "Muzeul Ceramicii de la Horezu"
+selling_points:
+  - "plecare cu autocar climatizat direct din Craiova"
+  - "ghid turistic inclus toata ziua"
+  - "loc de imbarcare aproape de tine"
+cta: "Rezerva-ti locul acum, sunt puține locuri disponibile!"
+price_details: "Pret: 149 RON / persoana, transport si ghid incluse"
+tone: "prietenos, cald, ca un sfat de la un cunoscut, nu agresiv de vanzare"
+
+# --- productie video/voce ---
+voice:
+  provider: elevenlabs
+  voice_id: "REPLACE_WITH_ELEVENLABS_VOICE_ID"   # vezi README pentru cum il gasesti
+  model_id: "eleven_multilingual_v2"
+  language: "ro"
+
+footage:
+  # Poti pune fie un clip video sursa (recomandat, 9:16), fie o lista de poze
+  # din care pipeline-ul construieste automat un slideshow cu Ken Burns.
+  source_video: null
+  source_images:
+    - assets/footage/excursie-manastiri/poza1.jpg
+    - assets/footage/excursie-manastiri/poza2.jpg
+    - assets/footage/excursie-manastiri/poza3.jpg
+  image_duration_seconds: 4
+
+banner_template: config/banner_template.yaml
+
+output:
+  file: assets/output/excursie-manastiri-25-iulie.mp4
+
+# --- etichetare pentru Meta Ads (leaga videoclipul de campanie/raportare) ---
+meta_ads:
+  campaign_name_prefix: "Raphael Travel - Excursii Zi"
+  ad_name: "excursie-manastiri-25-iulie-ugc-v1"
+  format_tag: "ugc-talking-head-9x16"     # folosit la analiza de performanta pe format
+  daily_budget_ron: 60
+  objective: "OUTCOME_LEADS"

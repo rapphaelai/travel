@@ -1,0 +1,175 @@
+# Raphael Travel/Academy — Automatizare UGC video + banner + Meta Ads
+
+Pipeline care ia detaliile unei excursii (nume, perioadă, obiective, preț) și
+generează automat:
+
+1. **Scriptul de voce** pentru reclama UGC (naratiune scurtă, stil "sfat de la
+   un prieten"), în română.
+2. **Voiceover AI** prin ElevenLabs, cu vocea ta clonată.
+3. **Banner text suprapus** pe video (perioada excursiei + nr. obiective +
+   argumentul de conversie), în același stil ca posterele de tip cel din
+   `HAI CU NOI IN EXCURSIE / 25 IULIE - 5 OBIECTIVE / EXCURSIE DE O ZI IEFTINA`.
+4. **Videoclipul final** (format 9:16, gata de Reels/TikTok/Stories/Meta Ads).
+5. **Campania de Meta Ads** pentru videoclipul respectiv, bazată pe formatul
+   (tipul de video) care a performat cel mai bine până acum.
+
+Testat local în acest sandbox cu ffmpeg + Pillow — pipeline-ul de video +
+banner e verificat funcțional end-to-end (vezi capturile trimise în chat).
+Partea de ElevenLabs și Meta Ads e completă ca și cod, dar are nevoie de
+cheile tale API ca să ruleze efectiv (n-am avut acces la ele acum).
+
+## Structura proiectului
+
+```
+config/
+  banner_template.yaml        stilul banner-ului (culori, fonturi, poziții)
+  trips/
+    2026-07-25-...yaml        un fișier = o excursie = un input al automatizării
+assets/
+  fonts/                      fonturi bundle-uite (DejaVu Sans, licență liberă)
+  footage/<trip-id>/          pozele/videoclipurile brute ale fiecărei excursii
+  output/                     rezultatele generate (video, audio, banner) — ignorate de git
+src/travel_ugc/
+  trip.py                     încarcă și validează un fișier de excursie
+  script_builder.py           construiește textul de narațiune + caption
+  voice/elevenlabs_client.py  apel către ElevenLabs Text-to-Speech
+  video/banner.py             randează banner-ul text (Pillow)
+  video/compose.py            asamblează footage + banner + voiceover (ffmpeg)
+  pipeline.py                 orchestratorul principal (CLI)
+  meta_ads/
+    client.py                 client subțire pentru Meta Graph API
+    insights.py                statistici brute per reclamă
+    performance.py             clasament pe *format de video*, nu doar pe reclamă
+    campaign_builder.py         creează campanie/adset/creative/ad
+    cli.py                      CLI: `stats`, `create-campaign`
+```
+
+## 1. Instalare
+
+```bash
+python3 -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+
+# ffmpeg trebuie instalat separat (nu e pachet python)
+sudo apt-get install -y ffmpeg      # Linux/Debian/Ubuntu
+brew install ffmpeg                  # macOS
+```
+
+Copiază `.env.example` → `.env` și completează cheile (vezi secțiunile de mai
+jos). `.env` e deja în `.gitignore`, nu ajunge niciodată în git.
+
+## 2. Adaugi o excursie nouă (inputul automatizării)
+
+Creezi un fișier nou în `config/trips/`, după modelul
+`config/trips/2026-07-25-excursie-manastiri.yaml`. Câmpurile cheie:
+
+- `hook_line`, `start_date`/`end_date`, `objectives_count`, `price_line` →
+  exact textele care apar pe banner (ca în poza de referință).
+- `destination`, `objectives`, `selling_points`, `cta`, `price_details`,
+  `tone` → materialul brut din care se construiește scriptul de narațiune.
+- `voice.voice_id` → vocea ta din ElevenLabs (vezi secțiunea 3).
+- `footage.source_video` **sau** `footage.source_images` → materialul video
+  brut peste care se pune banner-ul (pune fișierele în `assets/footage/<trip-id>/`).
+- `meta_ads.*` → prefixul campaniei, bugetul zilnic, obiectivul, și
+  `format_tag` — eticheta tipului de creativă (ex: `ugc-talking-head-9x16`),
+  folosită mai jos ca să comparăm performanța pe *tip de format*, nu doar
+  pe reclamă individuală.
+
+## 3. Rulezi pipeline-ul video
+
+```bash
+# doar banner-ul (PNG), rapid, fără ElevenLabs — bun ca preview
+PYTHONPATH=src python3 -m travel_ugc.pipeline --trip config/trips/2026-07-25-excursie-manastiri.yaml --banner-only
+
+# video complet, fără voce (dacă ELEVENLABS_API_KEY nu e încă setat)
+PYTHONPATH=src python3 -m travel_ugc.pipeline --trip config/trips/2026-07-25-excursie-manastiri.yaml --no-voice
+
+# video complet, cu voiceover ElevenLabs (fluxul normal, odată ce ai cheia)
+PYTHONPATH=src python3 -m travel_ugc.pipeline --trip config/trips/2026-07-25-excursie-manastiri.yaml
+```
+
+Rezultatul apare în `assets/output/<trip-id>.mp4`, gata de postat sau de
+folosit direct ca material pentru campania Meta Ads.
+
+## 4. Conectarea ElevenLabs
+
+1. Din contul tău ElevenLabs (Creative) → **Profile → API Keys** → generezi o
+   cheie și o pui în `.env` la `ELEVENLABS_API_KEY`.
+2. Găsești `voice_id`-ul vocii tale native/clonate:
+   ```bash
+   PYTHONPATH=src python3 -c "from travel_ugc.voice.elevenlabs_client import list_voices; [print(v['voice_id'], v['name']) for v in list_voices()]"
+   ```
+3. Pui `voice_id`-ul găsit în fișierul excursiei, la `voice.voice_id`.
+
+Nu există un conector oficial "ElevenLabs" în acest mediu de lucru care să
+țină automat cheia ta — de-asta pipeline-ul o citește direct din `.env`,
+lucru care funcționează la fel de bine și rămâne complet sub controlul tău.
+
+## 5. Conectarea Meta Ads (Raphael Travel)
+
+Meta nu are un conector "plug-and-play" pentru chat; se conectează prin API
+cu un token generat din Meta Business Suite. Pași:
+
+1. **Business Manager** → **Setări Business** → **Utilizatori de sistem**
+   (System Users) → creezi un utilizator de sistem nou (ex: "Automatizare
+   Raphael Travel").
+2. Îi atribui acces la contul de reclame Raphael Travel (**Ad Account**) cu
+   rol de Admin sau Advertiser.
+3. **Generate New Token** pentru acest utilizator de sistem, cu permisiunile:
+   `ads_management`, `ads_read`, `business_management`. Alege durata cea mai
+   lungă disponibilă (token de sistem — nu expiră la 60 de zile ca token-ul
+   de user normal).
+4. Copiezi token-ul în `.env` → `META_ACCESS_TOKEN`.
+5. Iei ID-ul contului de reclame (din Ads Manager, URL sau Business Settings,
+   format `123456789012345`) și îl pui în `.env` → `META_AD_ACCOUNT_ID`
+   (cu sau fără prefixul `act_`, codul îl adaugă automat dacă lipsește).
+
+### Statistici pe formate de video
+
+```bash
+PYTHONPATH=src python3 -m travel_ugc.meta_ads.cli stats --days 30
+```
+
+Afișează un clasament al **formatelor** (nu al reclamelor individuale) după
+cost per rezultat, hook rate (% care au văzut peste 25% din video) și hold
+rate (peste 75%) — exact ce ai nevoie ca să vezi ce *tip* de UGC
+funcționează, nu doar care reclamă anume.
+
+### Creezi automat o campanie nouă
+
+```bash
+PYTHONPATH=src python3 -m travel_ugc.meta_ads.cli create-campaign --trip config/trips/2026-07-25-excursie-manastiri.yaml
+```
+
+- Încarcă automat videoclipul generat la pasul 3.
+- Creează Campanie → Ad Set → Creative → Ad.
+- Dacă există deja reclame pe același `format_tag`, preia ca referință cea cu
+  cel mai bun cost per rezultat.
+- **Campania e creată implicit PAUSED** — o activezi manual din Meta Ads
+  Manager după ce verifici targetarea/bugetul, ca să nu se cheltuiască buget
+  real fără supervizare. Adaugă `--activate` doar când ești sigur.
+
+## 6. Fluxul complet, per excursie nouă
+
+```bash
+# 1. adaugi config/trips/noua-excursie.yaml + pozele/videoclipul în assets/footage/
+# 2. generezi videoclipul UGC
+PYTHONPATH=src python3 -m travel_ugc.pipeline --trip config/trips/noua-excursie.yaml
+# 3. verifici clasamentul de formate ca sa stii daca merge sa refolosesti reteta
+PYTHONPATH=src python3 -m travel_ugc.meta_ads.cli stats
+# 4. creezi campania (PAUSED) si o activezi manual dupa verificare
+PYTHONPATH=src python3 -m travel_ugc.meta_ads.cli create-campaign --trip config/trips/noua-excursie.yaml
+```
+
+## Ce nu e inclus (etapa următoare)
+
+- **Trigger complet automat** (ex: "adaugi fișierul YAML, totul rulează
+  singur fără nicio comandă") — momentan pornești manual comenzile de mai
+  sus; se poate adăuga un GitHub Actions workflow care rulează pipeline-ul
+  la fiecare push pe `config/trips/`, dacă vrei asta.
+- **Generare video/imagini AI pentru footage-ul brut** — momentan pipeline-ul
+  suprapune banner-ul peste poze/video pe care le pui tu în
+  `assets/footage/`; generarea propriu-zisă a scenelor video cu AI e un pas
+  separat (ex: Higgsfield, disponibil în acest mediu ca unealtă conectată).
+- **Dashboard vizual** pentru statisticile Meta Ads — acum e CLI text; se
+  poate adăuga un raport HTML dacă e util.
