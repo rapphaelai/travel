@@ -9,6 +9,12 @@ cd "$(dirname "$0")/.."
 echo "Raphael Travel -- pornire dashboard UGC"
 echo "----------------------------------------"
 
+if [ -d ".git" ]; then
+  echo "Verific actualizari din GitHub..."
+  git pull --ff-only || echo "(n-am putut actualiza automat -- continui cu codul local existent; verifica manual cu 'git status' daca ai schimbari locale ce blocheaza pull-ul)"
+  echo ""
+fi
+
 if ! command -v python3 &> /dev/null; then
   echo "Python 3 nu e instalat."
   echo "Descarca de la: https://www.python.org/downloads/"

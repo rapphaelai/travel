@@ -8,6 +8,13 @@ cd /d "%~dp0.."
 echo Raphael Travel -- pornire dashboard UGC
 echo ----------------------------------------
 
+if exist ".git" (
+  echo Verific actualizari din GitHub...
+  git pull --ff-only
+  if errorlevel 1 echo (n-am putut actualiza automat -- continui cu codul local existent^)
+  echo.
+)
+
 where python >nul 2>nul
 if errorlevel 1 (
   echo Python nu e instalat sau nu e in PATH.
