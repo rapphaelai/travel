@@ -189,7 +189,7 @@ PYTHONPATH=src python3 -m travel_ugc.meta_ads.cli create-campaign --trip config/
 - N-am putut testa build-ul Docker chiar aici (acest mediu de lucru nu permite Docker-in-Docker), dar fiecare pas din `Dockerfile` (Python 3.11-slim, `apt-get install ffmpeg`, `pip install -r requirements.txt`) e identic cu ce am rulat deja cu succes direct în acest sandbox -- verifică doar log-ul primului deploy din Render ca să confirmi.
 - Butonul de mai sus pornește deploy-ul din branch-ul curent (`claude/elevenabs-ugc-meta-ads-4qvosw`). După ce faci merge pe branch-ul principal, poți schimba branch-ul serviciului din Render (Settings -> Branch) sau redeploya de acolo.
 
-## 7. Dashboard web (local, pentru testare rapidă)
+## 7. Dashboard web (local, gratis -- recomandat)
 
 Pe lângă CLI, există un dashboard local unde adaugi contextul unei excursii
 prin formular, primești automat **7 variante de prompt video** (unghiuri de
@@ -201,9 +201,27 @@ primește automat banner-ul text. La final, generezi și **câmpurile de Meta
 Ads** (4 variante de text principal, 4 titluri, 3 descrieri ale apelului),
 fără linii de pauză (em/en dash), gata de copy-paste în Ads Manager.
 
+### Pornire cu un singur script (recomandat)
+
+- **Windows**: dublu-clic pe `scripts\start_dashboard.bat`
+- **Mac/Linux**: `./scripts/start_dashboard.sh` (prima dată: `chmod +x scripts/start_dashboard.sh`)
+
+Scriptul face totul singur: creează mediul Python (`.venv`), instalează
+dependințele, verifică ffmpeg, creează `.env` din `.env.example` dacă
+lipsește și te oprește să completezi cheia ElevenLabs înainte de a porni
+(nu trebuie s-o mai pui manual în linia de comandă de fiecare dată -- o
+citește automat din `.env` la fiecare rulare). La final deschide singur
+`http://localhost:8000` în browser.
+
+Rulează gratuit, pe discul tău -- fără sleep, fără să-ți piardă datele la
+redeploy (spre deosebire de planul gratuit Render de mai sus).
+
+### Pornire manuală (dacă nu vrei să folosești scriptul)
+
 ```bash
-ELEVENLABS_API_KEY=sk_... PYTHONPATH=src uvicorn travel_ugc.web.app:app --port 8000
+PYTHONPATH=src uvicorn travel_ugc.web.app:app --port 8000
 ```
+(citește tot din `.env` automat, la fel ca scriptul)
 
 Deschizi apoi [http://localhost:8000](http://localhost:8000). Poți încărca
 opțional o poză de referință a prezentatorului (persoana din materialele
