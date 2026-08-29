@@ -48,6 +48,10 @@ if ! grep -Eq "^ELEVENLABS_API_KEY=.+" .env; then
   exit 0
 fi
 
+if ! grep -Eq "^ANTHROPIC_API_KEY=.+" .env; then
+  echo "(info: ANTHROPIC_API_KEY lipseste -- totul functioneaza, doar 'Lipeste text liber' din formular nu merge fara ea.)"
+fi
+
 echo ""
 echo "Pornesc dashboard-ul pe http://localhost:8000 ..."
 echo "(lasa fereastra asta deschisa cat timp folosesti dashboard-ul; Ctrl+C ca sa opresti)"

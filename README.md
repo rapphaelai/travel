@@ -201,6 +201,21 @@ primește automat banner-ul text. La final, generezi și **câmpurile de Meta
 Ads** (4 variante de text principal, 4 titluri, 3 descrieri ale apelului),
 fără linii de pauză (em/en dash), gata de copy-paste în Ads Manager.
 
+### Completare automată din text liber (opțional)
+
+În loc să completezi cele ~15 câmpuri ale formularului unul câte unul, poți
+lipi un text liber (exact cum ai descrie excursia într-o conversație
+normală) în caseta **"Lipește text liber"** de deasupra formularului și apeși
+**"Extrage detaliile automat"** -- Claude extrage datele (dată, preț,
+obiectiv, regiune etc.) și pre-completează formularul. Tot le mai poți
+verifica/corecta înainte de a salva -- extragerea automată nu sare peste
+pasul de revizuire, fiindcă datele de pe banner trebuie să fie exacte.
+
+Necesită o cheie separată **`ANTHROPIC_API_KEY`** în `.env` (cont de pe
+[console.anthropic.com](https://console.anthropic.com) -> API Keys). E
+opțională -- fără ea, restul dashboard-ului (formular manual, prompturi,
+video, Meta Ads) funcționează normal, doar acest buton nu merge.
+
 ### Pornire cu un singur script (recomandat)
 
 - **Windows**: dublu-clic pe `scripts\start_dashboard.bat`

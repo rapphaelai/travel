@@ -52,6 +52,11 @@ if errorlevel 1 (
   exit /b 0
 )
 
+findstr /r /c:"^ANTHROPIC_API_KEY=..*" .env >nul 2>nul
+if errorlevel 1 (
+  echo (info: ANTHROPIC_API_KEY lipseste -- totul functioneaza, doar "Lipeste text liber" din formular nu merge fara ea.)
+)
+
 echo.
 echo Pornesc dashboard-ul pe http://localhost:8000 ...
 echo (lasa fereastra asta deschisa cat timp folosesti dashboard-ul; Ctrl+C ca sa opresti)

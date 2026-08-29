@@ -66,8 +66,19 @@
     </div>
   </section>
 
+  <section class="panel">
+    <h2>2. Lipește text liber (opțional -- completează formularul automat)</h2>
+    <p class="hint">Scrii/lipești orice, ca într-o conversație normală (destinație, dată, preț, obiective).
+      Claude extrage detaliile și pre-completează formularul de mai jos -- tot le poți verifica/corecta înainte de a salva.</p>
+    <textarea id="f_extract_text" rows="5" placeholder="Ex: Pelerinaj la Prislop, 4-5 septembrie, la mormântul Părintelui Arsenie Boca. Transport din București, cazare cu mic dejun, 499 lei. 3 obiective."></textarea>
+    <div class="row" style="margin-top:10px">
+      <button class="primary" id="extractBtn">Extrage detaliile automat</button>
+      <span class="hint" id="extractHint"></span>
+    </div>
+  </section>
+
   <section class="panel" id="formPanel" hidden>
-    <h2>2. Context excursie</h2>
+    <h2>3. Context excursie</h2>
     <div class="grid">
       <div class="field"><label>Hook banner (ex: Hai cu noi în excursie)</label><input id="f_hook_line" /></div>
       <div class="field"><label>Preț banner (ex: Excursie de o zi, ieftină!)</label><input id="f_price_line" /></div>
@@ -93,18 +104,18 @@
   </section>
 
   <section class="panel" id="promptsPanel" hidden>
-    <h2>3. Variante de prompt video</h2>
+    <h2>4. Variante de prompt video</h2>
     <button class="primary" id="genPromptsBtn">Generează 7 variante</button>
     <div id="promptsList" style="margin-top:14px"></div>
   </section>
 
   <section class="panel" id="jobsPanel" hidden>
-    <h2>4. Video-uri generate</h2>
+    <h2>5. Video-uri generate</h2>
     <div id="jobsList"></div>
   </section>
 
   <section class="panel" id="metaPanel" hidden>
-    <h2>5. Câmpuri Meta Ads</h2>
+    <h2>6. Câmpuri Meta Ads</h2>
     <button class="primary" id="genMetaBtn">Generează câmpurile Meta Ads</button>
     <div class="subhead">Text principal</div>
     <div id="metaPrimary"></div>
@@ -177,6 +188,29 @@ async function selectContext(id) {
 }
 
 $('newContextBtn').onclick = () => { currentId = null; showFormFor(null); $('promptsPanel').hidden = true; $('jobsPanel').hidden = true; $('metaPanel').hidden = true; };
+
+$('extractBtn').onclick = async () => {
+  const text = $('f_extract_text').value.trim();
+  if (!text) { $('extractHint').textContent = 'Lipește mai întâi un text.'; return; }
+  $('extractHint').textContent = 'Extrag detaliile (Claude)...';
+  $('extractBtn').disabled = true;
+  try {
+    const data = await api('/api/contexts/extract', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ text })
+    });
+    currentId = null;
+    showFormFor(data);
+    $('f_price_line_dialogue').value = data.price_line_dialogue || '';
+    $('f_free_context').value = text;
+    $('extractHint').textContent = 'Gata -- verifică/corectează câmpurile de mai jos, apoi salvează.';
+    document.getElementById('formPanel').scrollIntoView({ behavior: 'smooth' });
+  } catch (e) {
+    $('extractHint').textContent = 'Eroare la extragere: ' + e.message;
+  } finally {
+    $('extractBtn').disabled = false;
+  }
+};
 
 $('saveContextBtn').onclick = async () => {
   const fd = new FormData();

@@ -38,6 +38,7 @@ from pydantic import BaseModel
 from ..meta_ads.copy_generator import generate_ad_copy
 from ..prompt_variations import PromptContext, generate_prompt_variants
 from ..video.elevenlabs_flows import DEFAULT_VIDEO_MODEL, VideoGenerationError, upload_asset
+from .text_extraction import ExtractionError, extract_trip_details
 from ..voice.elevenlabs_client import ElevenLabsError
 from . import jobs, storage
 
@@ -54,6 +55,21 @@ app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 @app.get("/")
 def index() -> FileResponse:
     return FileResponse(str(STATIC_DIR / "index.html"))
+
+
+class ExtractRequest(BaseModel):
+    text: str
+
+
+@app.post("/api/contexts/extract")
+def extract_from_text(body: ExtractRequest):
+    """Extrage campurile structurate dintr-un text liber (Claude), ca sa
+    pre-completeze formularul -- nu creeaza un context, doar returneaza
+    valorile ca sa le revezi/corectezi inainte de a salva."""
+    try:
+        return extract_trip_details(body.text)
+    except ExtractionError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
 
 
 def _context_to_prompt_ctx(ctx: dict) -> PromptContext:
