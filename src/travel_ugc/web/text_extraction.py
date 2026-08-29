@@ -30,11 +30,19 @@ EXTRACTION_TOOL = {
             },
             "start_date": {
                 "type": "string",
-                "description": "Data de inceput, format YYYY-MM-DD. Daca anul lipseste, alege cea mai apropiata data viitoare.",
+                "description": (
+                    "Data de inceput, format YYYY-MM-DD. Daca anul lipseste, alege cea mai apropiata "
+                    "data viitoare. Daca textul NU mentioneaza nicio data concreta (ex: oferta "
+                    "permanenta, fara zi fixa), returneaza sir gol '' -- NU inventa o data si NU "
+                    "scrie text de tip placeholder ('necunoscut', 'unknown', etc)."
+                ),
             },
             "end_date": {
                 "type": "string",
-                "description": "Data de sfarsit, format YYYY-MM-DD. Pentru excursie de o zi, egala cu start_date.",
+                "description": (
+                    "Data de sfarsit, format YYYY-MM-DD. Pentru excursie de o zi, egala cu start_date. "
+                    "Sir gol '' daca nu exista o data concreta in text (vezi start_date)."
+                ),
             },
             "objectives_count": {
                 "type": "integer",
@@ -70,11 +78,19 @@ EXTRACTION_TOOL = {
             },
             "date_line": {
                 "type": "string",
-                "description": "Data pentru replica vorbita, cu majuscule, ex: '19 SEPTEMBRIE' sau '4-5 SEPTEMBRIE'.",
+                "description": (
+                    "Data pentru replica vorbita, cu majuscule, ex: '19 SEPTEMBRIE' sau "
+                    "'4-5 SEPTEMBRIE'. Sir gol '' daca nu exista o data concreta in text -- "
+                    "NU scrie text de tip placeholder."
+                ),
             },
             "period_line": {
                 "type": "string",
-                "description": "Perioada pentru replica vorbita, scrisa natural, ex: '19 septembrie' sau '4-5 septembrie'.",
+                "description": (
+                    "Perioada pentru replica vorbita, scrisa natural, ex: '19 septembrie' sau "
+                    "'4-5 septembrie'. Daca nu exista o data concreta (oferta permanenta), "
+                    "poti descrie perioada generic (ex: 'o zi'), fara sa inventezi o data."
+                ),
             },
             "departure_city": {
                 "type": "string",
@@ -129,7 +145,10 @@ def extract_trip_details(raw_text: str) -> dict:
                 "ca sa completezi automat un formular. Daca anul nu e mentionat explicit, "
                 "alege cea mai apropiata data viitoare fata de data de azi. Nu inventa "
                 "detalii care nu apar deloc in text sau nu pot fi deduse rezonabil -- "
-                "foloseste valorile implicite descrise in schema."
+                "foloseste valorile implicite descrise in schema. Pentru orice camp unde nu "
+                "exista informatie in text (ex: oferta permanenta, fara data fixa), returneaza "
+                "sir gol '' -- NU scrie niciodata text de tip placeholder precum 'unknown', "
+                "'necunoscut', '<UNKNOWN>', 'N/A' etc."
             ),
             tools=[EXTRACTION_TOOL],
             tool_choice={"type": "tool", "name": "extract_trip_details"},
